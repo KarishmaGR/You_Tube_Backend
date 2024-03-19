@@ -1,15 +1,13 @@
-// Handle Async Operation By using Promises
+// // Handle Async Operation By using Promises
 const asyncHandler = (requestHandler) => {
   return (req, res, next) => {
     Promise.resolve(requestHandler(req, res, next)).catch((err) => next(err));
   };
 };
 
-export { asyncHandler };
-
 // By Using Async Await
 
-// const asyncHandler = (fn) => async () => {
+// const asyncHandler = (fn) => async (req, res, next) => {
 //   try {
 //     await fn(req, res, next);
 //   } catch (error) {
@@ -19,3 +17,5 @@ export { asyncHandler };
 //     });
 //   }
 // };
+
+export { asyncHandler };

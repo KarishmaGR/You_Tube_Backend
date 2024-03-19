@@ -1,9 +1,13 @@
-import { app } from "./app.js";
+// require("dotenv").config();
 import dotenv from "dotenv";
 import DBconnect from "./db/indexDB.js";
+import { app } from "./app.js";
+// import "dotenv/config";
+
 dotenv.config({
   path: "./.env",
 });
+// console.log("Environment Variables:", process.env);
 
 DBconnect()
   .then(() => {
