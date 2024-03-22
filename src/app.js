@@ -21,9 +21,11 @@ import userRouter from "./routes/user.routes.js";
 import videoRouter from "./routes/video.routes.js";
 import SubscriptionRouter from "./routes/subscription.routes.js";
 import TweetRouter from "./routes/tweet.routes.js";
+import PlayListRouter from "./routes/playlist.routes.js";
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/videos", videoRouter);
 app.use("/api/v1/subscription", SubscriptionRouter);
 app.use("/api/v1/tweets", TweetRouter);
+app.use("/api/v1/playlist", PlayListRouter);
 
 export { app };
