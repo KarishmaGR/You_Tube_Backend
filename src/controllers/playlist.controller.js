@@ -164,9 +164,95 @@ const addVideoInPlaylist = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "Video added to the playlist", insertedvideo));
 });
 
+// Remove Video From palylist
+const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
+  const { videoId, playlistId } = req.params;
+  const userId = req.user._id;
+  if (!videoId && playlistId) {
+    throw new ApiError(401, "Please Enter  a valid Video ID  and Playlist ID");
+  }
+  const video = await Video.findById(videoId);
+  const owner = video.owner;
+  if (!userId.equals(owner)) {
+    throw new ApiError(403, "You Are not the owner of the video");
+  }
+  const playlist = await Playlist.findById(playlistId);
+  if (!playlist) {
+    throw new ApiError(404, "Playlist not found");
+  }
+  if (!playlist.videos.includes(videoId)) {
+    throw new ApiError(403, "This  video is not in this playlist");
+  }
+  const removedVideoIndex = playlist.videos.indexOf(videoId);
+  playlist.videos.splice(removedVideoIndex, 1);
+  const updatedPlaylist = await playlist.save();
+  if (!updatedPlaylist) {
+    throw new ApiError(500, "Server Error  while removing video from playlist");
+  }
+  // Send Response
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Video Removed Successfully", playlist));
+});
+
+// Delete Playlist
+const deletePlaylist = asyncHandler(async (req, res) => {
+  const { playlistId } = req.params;
+  if (!playlistId) {
+    throw new ApiError(404, "Please Enter A Valid Playlist Id");
+  }
+  const userId = req.user._id;
+  let playlisttodelete = await Playlist.findById(playlistId);
+  if (!playlisttodelete) {
+    throw new ApiError(404, "No Such Playlist Found");
+  }
+  if (!userId.equals(playlisttodelete.owner)) {
+    throw new ApiError(403, "Only The Owner Can Delete This Playlist");
+  }
+  await Playlist.findOneAndDelete({ _id: playlistId }).exec();
+  res
+    .status(200)
+    .json(new ApiResponse(200, "Playlist Deleted Succesfully", null));
+});
+
+// update Playlist
+const updatePlaylist = asyncHandler(async (req, res) => {
+  const { name, description } = req.body;
+  const { playlistId } = req.params;
+  const ownerId = req.user._id;
+  if (!name || !description) {
+    throw new ApiError(401, "Please Enter Required Field");
+  }
+  if (!playlistId) {
+    throw new ApiError(404, "Please Provide A Valid Playlist Id");
+  }
+  let playlisttobeupdated = await Playlist.findOneAndUpdate(
+    {
+      _id: playlistId,
+      owner: ownerId,
+    },
+    {
+      name,
+      description,
+    },
+    { new: true }
+  );
+  if (!playlisttobeupdated) {
+    throw new ApiError(401, "You are not authorized to perform this action");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, "Playlist updated Successfully", playlisttobeupdated)
+    );
+});
 export {
   createPlaylist,
   getUserAllPlaylists,
   getPlaylistById,
   addVideoInPlaylist,
+  removeVideoFromPlaylist,
+  deletePlaylist,
+  updatePlaylist,
 };
