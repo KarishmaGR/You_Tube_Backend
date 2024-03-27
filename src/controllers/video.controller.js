@@ -66,6 +66,9 @@ const publishVideo = asyncHandler(async (req, res) => {
 // Get all Video by owner
 const getAllVideo = asyncHandler(async (req, res) => {
   const { page = 1, limit = 5, query, sortBy, sortType, userId } = req.query;
+  if (!userId) {
+    throw new ApiError(400, "User Id Is Required");
+  }
 
   const pipeline = [];
   if (userId) {
@@ -86,10 +89,41 @@ const getAllVideo = asyncHandler(async (req, res) => {
   pipeline.push({
     $limit: parseInt(limit),
   });
+  pipeline.push(
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "video",
+        as: "likes",
+      },
+    },
+    {
+      $addFields: {
+        likesCount: { $size: "$likes" },
+      },
+    }
+  );
+  pipeline.push({
+    $project: {
+      _id: 1,
+      title: 1,
+      videoFile: 1,
+      thumbnail: 1,
+      duration: 1,
+      description: 1,
+      views: 1,
+      isPublished: 1,
+      owner: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      likesCount: 1,
+      likedBy: "$likes.likedBy", // Extracting likedBy IDs
+    },
+  });
 
   const vidoes = await Video.aggregate(pipeline);
 
-  // console.log("first", vidoes);
   return res
     .status(200)
     .json(new ApiResponse(200, { vidoes }, "Successfuly fetched videos"));
@@ -102,7 +136,46 @@ const getVidoeById = asyncHandler(async (req, res) => {
   if (!videoId) {
     throw new ApiError(401, "please Enter  a valid video id");
   }
-  const video = await Video.findById(videoId); //.populate("owner");
+  // const video = await Video.findById(videoId); //.populate("owner");
+  const video = await Video.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(videoId),
+      },
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "video",
+        as: "likes",
+      },
+    },
+    {
+      $addFields: {
+        likesCount: {
+          $size: "$likes",
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        title: 1,
+        videoFile: 1,
+        thumbnail: 1,
+        duration: 1,
+        description: 1,
+        views: 1,
+        isPublished: 1,
+        owner: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        likesCount: 1,
+        likedBy: "$likes.likedBy", // Extracting likedBy IDs
+      },
+    },
+  ]);
   if (!video) throw new ApiError("No such video exists");
 
   return res

@@ -41,9 +41,28 @@ const getUsersAllTweets = asyncHandler(async (req, res) => {
       },
     },
     {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "tweet",
+        as: "likes",
+      },
+    },
+    {
+      $addFields: {
+        likeCount: {
+          $size: "$likes",
+        },
+      },
+    },
+    {
       $project: {
         _id: 1,
         content: 1,
+        likes: {
+          likedBy: 1,
+        },
+        likeCount: 1,
       },
     },
   ]);
